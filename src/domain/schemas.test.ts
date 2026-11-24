@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { movementSchema, productSchema } from "./schemas";
+import { credentialsSchema, movementSchema, productSchema } from "./schemas";
 import { INT_MAX, INT_MIN } from "./types";
 
 const UUID = "123e4567-e89b-42d3-a456-426614174000";
@@ -103,5 +103,34 @@ describe("movementSchema", () => {
   it("los mensajes están en español", () => {
     const result = movementSchema.safeParse({ ...base, kind: "in", quantity: 0 });
     expect(result.error?.issues[0]?.message).toBe("La cantidad debe ser mayor que 0");
+  });
+});
+
+describe("credentialsSchema", () => {
+  it("normaliza el email (trim y minúsculas) y deja la contraseña intacta", () => {
+    expect(credentialsSchema.parse({ email: "  Ana@Example.COM ", password: " abcdef " })).toEqual({
+      email: "ana@example.com",
+      password: " abcdef ",
+    });
+  });
+  it("acepta una contraseña de exactamente 6 caracteres y rechaza una de 5", () => {
+    expect(credentialsSchema.safeParse({ email: "a@b.es", password: "123456" }).success).toBe(true);
+    expect(issuePaths(credentialsSchema.safeParse({ email: "a@b.es", password: "12345" }))).toEqual(["password"]);
+  });
+  it("no recorta la contraseña: 5 caracteres más un espacio cuentan como 6", () => {
+    expect(credentialsSchema.safeParse({ email: "a@b.es", password: "12345 " }).success).toBe(true);
+  });
+  it("rechaza email vacío, solo espacios, ausente o sin formato válido, con el error en email", () => {
+    for (const email of ["", "   ", undefined, "sin-arroba", "a@", "a b@c.es"]) {
+      expect(issuePaths(credentialsSchema.safeParse({ email, password: "123456" }))).toEqual(["email"]);
+    }
+  });
+  it("rechaza contraseña vacía o ausente, con el error en password", () => {
+    for (const password of ["", undefined]) {
+      expect(issuePaths(credentialsSchema.safeParse({ email: "a@b.es", password }))).toEqual(["password"]);
+    }
+  });
+  it("informa de ambos campos a la vez", () => {
+    expect(issuePaths(credentialsSchema.safeParse({ email: "", password: "" })).sort()).toEqual(["email", "password"]);
   });
 });

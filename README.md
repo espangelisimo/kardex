@@ -40,6 +40,15 @@ no un número que se edita a mano. Next.js 15 · Supabase (Postgres + Auth + RLS
 Testing se ocupa de lo que una máquina no puede decidir: si una política RLS es la correcta,
 si un test prueba algo de verdad o si hay una condición de carrera.
 
+## Configuración local
+
+Copia `.env.example` a `.env.local` y rellénalo con los valores que imprime `npx supabase status`
+(URL del API y anon key). Sin ese archivo el middleware falla en todas las rutas.
+
+**Despliegue:** el registro es abierto y sin confirmación por email. En el proyecto remoto de Supabase
+hay que desactivar Authentication → Providers → Email → "Confirm email" (en local ya está desactivado
+en `supabase/config.toml`). Si queda activado, "Crear cuenta" avisa de que falta confirmar el email.
+
 ## Desarrollo local
 
 ```bash

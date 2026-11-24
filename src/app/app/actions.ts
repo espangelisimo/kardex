@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 // así que no hay resultado que modelar como { ok, data | error }.
 export async function signOut(): Promise<never> {
   const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) {
     console.error("signOut falló:", error.message);
   }

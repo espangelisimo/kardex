@@ -61,3 +61,20 @@ export const movementSchema = z
 
 export type MovementInput = z.input<typeof movementSchema>;
 export type MovementData = z.output<typeof movementSchema>;
+
+/** Longitud mínima de contraseña: debe coincidir con minimum_password_length de supabase/config.toml. */
+export const PASSWORD_MIN_LENGTH = 6;
+
+export const credentialsSchema = z.object({
+  email: z
+    .string({ error: "El email es obligatorio" })
+    .trim()
+    .toLowerCase()
+    .pipe(z.email({ error: "Introduce un email válido" })),
+  // Sin trim: los espacios al principio o al final forman parte de la contraseña.
+  password: z
+    .string({ error: "La contraseña es obligatoria" })
+    .min(PASSWORD_MIN_LENGTH, `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres`),
+});
+
+export type CredentialsData = z.output<typeof credentialsSchema>;

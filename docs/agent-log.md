@@ -77,3 +77,19 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - Notas para T-03b:
   - `signOut()` usa por defecto `scope: 'global'`. El Orquestador decide `scope: 'local'`: cerrar sesión en un navegador no debería expulsar al usuario de los demás.
   - Sin variables de entorno, el middleware falla en todas las rutas. Se documentará en el README.
+
+### T-03b · ronda 1 · PASS
+- Develop:
+  - `credentialsSchema` en el dominio y `authErrorMessage` (src/lib), cada uno con sus tests.
+  - `/login`: un solo formulario y una sola Server Action, `authenticate`. El `intent` del botón pulsado indica qué hacer, así que funciona sin JS.
+  - `signOut` pasa a `scope: 'local'`, y el README explica la configuración local y la opción "Confirm email" del proyecto remoto.
+- Testing: todo OK.
+  - `verify` en verde, con 84 tests y cobertura del 100 % en el dominio.
+  - Con POST reales sin JS, todos los errores salen en español y no aparece ningún mensaje crudo de Supabase (S-08). El log del servidor registra solo el código de error.
+  - Probado el flujo completo: registrarse, `/app`, cerrar sesión (la cookie antigua deja de valer en el servidor) y volver a entrar.
+- Decisión: commit `feat(T-03b)`. El humano acepta una sola acción en lugar de dos.
+- Notas abiertas:
+  - Se acepta una contraseña formada solo por espacios.
+  - Falta `.max()` en email y contraseña (sin él, el usuario ve el mensaje genérico).
+  - Con el email vacío sale "email válido" en lugar de "obligatorio".
+- Queda pendiente la prueba E2E en Chrome: botones deshabilitados, 360 px y que Enter equivalga a "Entrar". Por el código, "Entrar" es el primer submit del DOM y ningún CSS altera el orden.
