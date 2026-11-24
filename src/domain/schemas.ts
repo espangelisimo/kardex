@@ -12,16 +12,26 @@ const integerInput = z.preprocess((value) => {
 
 export const productSchema = z.object({
   // Sin ningún espacio en blanco (también internos y tabs) y en mayúsculas.
+  // Debe coincidir con los checks de products en Postgres (migración products_hardening):
+  // el SKU es ASCII, así que ambos validan lo mismo. toUpperCase() puede expandir
+  // ("ß" → "SS"): se acepta, y la base de datos guarda lo que produce zod.
+  // El regex usa `*` porque la vacía ya la rechaza min(1) (un solo error por campo vacío).
   sku: z
     .string({ error: "El SKU es obligatorio" })
     .transform((value) => value.replace(/\s+/g, "").toUpperCase())
-    .pipe(z.string().min(1, "El SKU es obligatorio")),
+    .pipe(
+      z
+        .string()
+        .min(1, "El SKU es obligatorio")
+        .max(32, "El SKU admite 32 caracteres como máximo")
+        .regex(/^[A-Z0-9._-]*$/, "El SKU solo admite letras (A-Z sin acentos ni ñ), números, punto, guion y guion bajo"),
+    ),
   name: z
     .string({ error: "El nombre es obligatorio" })
     .trim()
     .min(1, "El nombre es obligatorio")
     .max(120, "El nombre admite 120 caracteres como máximo"),
-  unit: z.string({ error: "La unidad es obligatoria" }).trim().min(1, "La unidad es obligatoria").default("ud"),
+  unit: z.string({ error: "La unidad es obligatoria" }).trim().min(1, "La unidad es obligatoria").max(20, "La unidad admite 20 caracteres como máximo").default("ud"),
   min_stock: integerInput.pipe(z.number().min(0, "El stock mínimo no puede ser negativo")).default(0),
 });
 

@@ -19,6 +19,21 @@ describe("productSchema", () => {
       expect(issuePaths(productSchema.safeParse({ ...validProduct, sku }))).toEqual(["sku"]);
     }
   });
+  it("SKU: acepta hasta 32 caracteres y rechaza 33", () => {
+    expect(productSchema.parse({ ...validProduct, sku: "a".repeat(32) }).sku).toBe("A".repeat(32));
+    expect(issuePaths(productSchema.safeParse({ ...validProduct, sku: "a".repeat(33) }))).toEqual(["sku"]);
+  });
+  it("SKU: admite dígitos, punto, guion y guion bajo", () => {
+    expect(productSchema.parse({ ...validProduct, sku: "a.1_b-2" }).sku).toBe("A.1_B-2");
+  });
+  it.each(["ñ", "é", "tornillo/5", "sku#1", "日本", "😀"])("SKU rechaza %j (solo ASCII), con el error en sku", (sku) => {
+    expect(issuePaths(productSchema.safeParse({ ...validProduct, sku }))).toEqual(["sku"]);
+  });
+  it("SKU: 'ß' se expande a 'SS' al pasar a mayúsculas y se acepta (lo que guarda la BD es lo que produce zod)", () => {
+    expect(productSchema.parse({ ...validProduct, sku: "ß" }).sku).toBe("SS");
+    // La expansión cuenta para el máximo: 17 'ß' son 34 caracteres.
+    expect(issuePaths(productSchema.safeParse({ ...validProduct, sku: "ß".repeat(17) }))).toEqual(["sku"]);
+  });
   it("recorta el nombre y rechaza vacío o de más de 120 caracteres", () => {
     expect(productSchema.parse({ ...validProduct, name: "  Tornillo  " }).name).toBe("Tornillo");
     expect(productSchema.parse({ ...validProduct, name: "a".repeat(120) }).name).toHaveLength(120);
@@ -31,6 +46,10 @@ describe("productSchema", () => {
     expect(productSchema.parse({ sku: "a", name: "n" }).unit).toBe("ud");
     expect(issuePaths(productSchema.safeParse({ ...validProduct, unit: "  " }))).toEqual(["unit"]);
     expect(issuePaths(productSchema.safeParse({ ...validProduct, unit: 5 }))).toEqual(["unit"]);
+  });
+  it("unidad: acepta 20 caracteres y rechaza 21", () => {
+    expect(productSchema.parse({ ...validProduct, unit: "u".repeat(20) }).unit).toHaveLength(20);
+    expect(issuePaths(productSchema.safeParse({ ...validProduct, unit: "u".repeat(21) }))).toEqual(["unit"]);
   });
   it("min_stock: por defecto 0, acepta 0, enteros y strings numéricos del formulario", () => {
     expect(productSchema.parse({ sku: "a", name: "n" }).min_stock).toBe(0);

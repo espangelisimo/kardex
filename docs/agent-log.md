@@ -108,6 +108,30 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - Límites idénticos en zod y en un `check`: SKU `^[A-Z0-9._-]{1,32}$`, `name` ≤ 120 y `unit` ≤ 20. El humano fijó el máximo de 32 del SKU en T-02, pero no se había escrito; queda recogido ahora en AC-04.5.
 - Los archivados se ocultan en el listado por defecto; `?archivados=1` los muestra, y funciona sin JS.
 
+### Cambio de modo del humano (durante T-04a)
+- A partir de T-04b, el Orquestador encadena T-04b, T-05 y T-06 sin pararse entre tareas. Solo para si hay una decisión del humano, si una tarea llega a 4 rondas sin PASS o si hay que tocar algo externo (GitHub, Supabase remoto o Vercel). Las dudas pequeñas se resuelven con la opción más simple y se anotan aquí.
+
+### T-04a · ronda 1 · PASS
+- Develop:
+  - Migración nueva `20260102000000_products_hardening.sql`: `revoke insert, update` y grants por columna. También añade los checks `products_sku_format`, `products_name_length` y `products_unit_length`.
+  - `products.test.sql` con 24 aserciones.
+  - zod: el SKU admite como máximo 32 caracteres de `[A-Z0-9._-]` y la unidad, 20.
+  - `product-errors.ts`: el error 23505 se muestra en el campo `sku` y el 23514, en el campo de la constraint que falla.
+  - Acciones `saveProduct` y `setArchived`.
+  - `ß` se guarda como `SS`, y esa expansión cuenta para el límite.
+- Testing: todo OK.
+  - `verify` en verde: 101 tests y el dominio al 100 %. `test:db` da Files=3, Tests=73, PASS.
+  - Con PostgREST real, un PATCH de `id`, `workspace_id` o `created_at` y un POST con `id`, `created_at` o `archived_at` devuelven 403 42501. `product_stock` sigue funcionando.
+  - Fuzz del SKU de U+0000 a U+2FFFF, sin ninguna discrepancia entre zod y Postgres.
+  - Las acciones reales responden con el SKU duplicado en el campo, sin dejar pasar ningún mensaje crudo (S-08).
+- Decisión: commit `feat(T-04a)`.
+  - C-04: el éxito de `saveProduct` es un `redirect` y no `{ok:true,data}`. Lo acepto con el mismo criterio que `signOut`: no hay datos que devolver a la UI.
+  - Las notas pasan a T-04b, porque son baratas y tocan archivos de T-04 todavía no publicados (D-05 lo permite):
+    - El comentario de la migración está mal: zod 4 cuenta puntos de código, igual que `char_length`, así que el límite es idéntico y no "más estricto". Se corrige y se añade un test con 120/121 caracteres fuera del BMP.
+    - Archivar un producto que ya está archivado reescribe `archived_at`. Se cambia para que conserve la fecha original.
+    - El formulario debe enviar y rellenar siempre los cuatro campos, porque `saveProduct` sobrescribe con los valores por defecto.
+  - Deuda aceptada: `database.types.ts` tipa `Insert` con `id`, `created_at` y `archived_at` opcionales porque el generador ignora los grants por columna. La BD lo rechaza con 42501.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
