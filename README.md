@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kardex
 
-## Getting Started
+Inventario para pequeños negocios en el que el stock es la suma de un registro inmutable de movimientos,
+no un número que se edita a mano. Next.js 15 · Supabase (Postgres + Auth + RLS) · Vercel.
 
-First, run the development server:
+**Demo:** _pendiente_ · **Usuario de prueba:** _pendiente_
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Cómo se ha construido: un equipo de tres agentes
+
+```
+                 ┌──────────────────────────┐
+   humano ─────▶ │ Orquestador (CLAUDE.md)  │ ── registra cada ronda ─▶ docs/agent-log.md
+                 └─────┬──────────────▲─────┘
+          tarea + AC-* │              │ VEREDICTO PASS/FAIL + fallos [id] archivo:línea
+       (+ informe FAIL)│              │
+                 ┌─────▼─────┐   ┌────┴──────┐
+                 │  develop  │   │  testing  │  ← solo lectura: Read, Grep, Glob, Bash
+                 │ (sonnet)  │   │  (opus)   │
+                 └─────┬─────┘   └────▲──────┘
+                       └── diff ──────┘   revisa contra docs/DIRECTRICES.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Archivo | Para qué |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | Orquestador: bucle de trabajo, límite de rondas, criterio de PASS |
+| [`.claude/agents/develop.md`](.claude/agents/develop.md) | Cómo programa Develop |
+| [`.claude/agents/testing.md`](.claude/agents/testing.md) | Cómo revisa Testing y formato obligatorio del informe |
+| [`docs/DIRECTRICES.md`](docs/DIRECTRICES.md) | Las reglas que Develop cumple y Testing verifica (id + severidad) |
+| [`docs/SPEC.md`](docs/SPEC.md) | Producto, modelo de datos y tareas con criterios de aceptación |
+| [`docs/agent-log.md`](docs/agent-log.md) | Historial real de rondas Develop ⇄ Testing |
+| [`docs/decisions/`](docs/decisions) | ADRs: por qué el equipo es así y por qué el stock es un registro |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Lo que no depende del criterio de un modelo:**
+- `npm run verify`: lint, typecheck estricto, unit tests, tests del hook, escaneo de secretos y build.
+- `npm run test:db`: tests pgTAP de RLS contra un Postgres local (Docker). Prueban que un usuario no ve datos de otro.
+- Hook `PreToolUse` ([`.claude/hooks/guard.mjs`](.claude/hooks/guard.mjs)): impide a cualquier agente escribir `.env`,
+  editar migraciones ya creadas o las directrices, o hacer push de esquema a producción. En caso de error bloquea.
+- CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) repite todo lo anterior en cada push.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Testing se ocupa de lo que una máquina no puede decidir: si una política RLS es la correcta,
+si un test prueba algo de verdad o si hay una condición de carrera.
 
-## Learn More
+## Desarrollo local
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cp .env.example .env.local     # rellena URL y anon key de tu proyecto Supabase
+npm install
+npx supabase start             # Postgres + Auth locales (requiere Docker)
+npm run dev
+npm run verify && npm run test:db
+```
