@@ -77,6 +77,11 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 - AC-05.2 Una salida mayor que el stock muestra "Stock insuficiente: hay N" sin crear nada.
 - AC-05.3 Historial del producto con fecha, tipo, cantidad, stock acumulado y autor.
 - AC-05.4 El envío doble del formulario no duplica movimientos.
+- Diseño (Orquestador, modo auto):
+  - AC-05.4 se garantiza en Postgres con una clave de idempotencia: `request_id` es un uuid generado por el servidor al pintar la ficha, con `unique (workspace_id, request_id)`, y `register_movement` devuelve el movimiento ya existente.
+  - El autor se guarda como `created_by_email` en el momento del alta.
+  - El stock acumulado sale de una vista `movement_history` (`security_invoker`) con `sum() over (…)`.
+  - Partida en T-05a (migración, pgTAP, errores, Server Action) y T-05b (UI).
 
 ### T-06 · Panel
 - AC-06.1 `/app` muestra el número de productos, cuántos tienen stock bajo y los últimos 10 movimientos.

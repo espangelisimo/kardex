@@ -163,6 +163,17 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - Nota que paso a T-05b: si todos los productos están archivados, el listado de activos dice "Aún no tienes productos", lo que confunde. Debería decir que no hay productos activos y remitir a los archivados.
 - T-04 queda cerrada.
 
+### Decisiones del Orquestador antes de T-05 (modo auto, la opción más simple que sea robusta)
+- AC-05.4 con clave de idempotencia en Postgres (`request_id`), no solo con el botón deshabilitado. El botón deshabilitado no cubre:
+  - el envío sin JS;
+  - los reintentos del navegador;
+  - dos pestañas abiertas.
+  - Como `register_movement` ya bloquea la fila del producto, dos peticiones con la misma clave se serializan, y la segunda devuelve el movimiento de la primera.
+- Autor: `created_by_email` se copia de `auth.users` al registrar. El log es inmutable, así que guarda quién era en ese momento, y la RLS de `auth.users` no permite hacer un join desde el cliente.
+- Stock acumulado: vista `movement_history` con `security_invoker` (S-04), que usa `sum(quantity) over (partition by product_id order by created_at, id)`.
+- Se aprovecha la nueva `register_movement` para cerrar la nota de T-01: `p_kind` null devuelve un error propio, no 23502.
+- T-05 se parte en T-05a (BD, errores y acción) y T-05b (UI), porque entre las dos superan los ~8 archivos.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
