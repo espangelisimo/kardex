@@ -93,3 +93,11 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
   - Falta `.max()` en email y contraseña (sin él, el usuario ve el mensaje genérico).
   - Con el email vacío sale "email válido" en lugar de "obligatorio".
 - Queda pendiente la prueba E2E en Chrome: botones deshabilitados, 360 px y que Enter equivalga a "Entrar". Por el código, "Entrar" es el primer submit del DOM y ningún CSS altera el orden.
+
+### T-03 · prueba E2E en Chrome (Orquestador) · OK
+- Al pulsar Enter en el formulario se envía `intent=signIn`: lo confirma `e.submitter` y un email nuevo no se registra, sino que devuelve "Email o contraseña incorrectos.".
+- Durante el envío los dos botones quedan deshabilitados y se rehabilitan al llegar la respuesta. Lo comprueba un MutationObserver sobre `disabled`.
+- Probado el flujo completo: registro → `/app` con el email → cerrar sesión → `/login`, y `/app` vuelve a redirigir. Con un email ya registrado sale "Ya existe una cuenta con ese email.". Entrar con Enter lleva a `/app`.
+- A 360 px (iframe de 360 px, porque la ventana no se podía reducir), `/login` y `/app` no tienen scroll horizontal (`scrollWidth == clientWidth`). El email largo se trunca y los errores salen junto a cada campo.
+- El aviso de hidratación en desarrollo lo causan atributos `bis_*` que inyecta una extensión del navegador, no la app.
+- T-03 queda cerrada.
