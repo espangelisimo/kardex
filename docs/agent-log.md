@@ -62,3 +62,18 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
   - Registro abierto y sin confirmación por email, "lo más sencillo posible". AC-03.2 se amplía para incluir el alta.
   - AC-03.1 deja fuera el cliente de navegador: con Server Actions no se usa y sería código muerto (C-06).
 - El Orquestador parte T-03 en T-03a (sesión, middleware, `/app` protegido, cerrar sesión) y T-03b (login y registro), porque entre las dos superan los ~8 archivos.
+
+### T-03a · ronda 1 · PASS
+- Develop:
+  - Cliente de servidor `src/lib/supabase/server.ts` y `src/middleware.ts`, que refresca la sesión con `getUser()` y hace las redirecciones `/app/*`↔`/login`.
+  - `src/app/app/layout.tsx` vuelve a comprobar `getUser()`. Tiene una cabecera con "Cerrar sesión", que es una Server Action que siempre redirige.
+  - `/` redirige a `/app`, el layout raíz tiene `lang="es"` y se han borrado los SVG de la plantilla.
+- Testing: todo OK.
+  - Con un servidor de producción, sin cookie: `/app`, `/app/x/y` y `/app?x=1` responden 307 a `/login`, y `/APP` y `/appfoo` dan 404, así que no hay bypass.
+  - Con una sesión real, `/app` responde 200 sin caché. Una cookie caducada se refresca, y la cookie nueva se mantiene en los redirects.
+  - `signOut` responde 303 a `/login` y revoca el token en el servidor.
+  - Archivo de entorno local: el hook `guard.mjs` impide a los agentes tocar ficheros de entorno. Testing pasó las variables por la línea de comandos, y el humano crea el archivo.
+- Decisión: commit `feat(T-03a)`. Acepto la justificación de C-04 para `signOut`: siempre redirige y no hay ningún resultado que modelar.
+- Notas para T-03b:
+  - `signOut()` usa por defecto `scope: 'global'`. El Orquestador decide `scope: 'local'`: cerrar sesión en un navegador no debería expulsar al usuario de los demás.
+  - Sin variables de entorno, el middleware falla en todas las rutas. Se documentará en el README.
