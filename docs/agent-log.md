@@ -328,7 +328,7 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
 - Ninguna de las dos bloquea: se corregirán en una ronda corta cuando el humano lo decida.
-- (T-04, decidida por el Orquestador en modo auto) El comentario de `20260102000000_products_hardening.sql:18-20` dice que zod cuenta en UTF-16. En realidad cuenta puntos de código, igual que `char_length`, así que los límites son idénticos, y lo fija `schemas.test.ts`. El hook impide editar la migración: lo corrige el humano a mano antes del primer push, o se deja.
+- (T-04, decidida por el Orquestador en modo auto) El comentario de `20260102000000_products_hardening.sql:18-20` dice que zod cuenta en UTF-16. En realidad cuenta puntos de código, igual que `char_length`, así que los límites son idénticos, y lo fija `schemas.test.ts`. El hook impide editar la migración: lo corrige el humano a mano antes del primer push, o se deja. **Resuelta (2026-11-24):** el humano corrigió el comentario a mano antes del primer push; solo cambia el comentario, no el SQL.
 - (T-04) La fecha original de `archived_at` solo la conserva la Server Action, no la BD.
 - (T-05a) U+200B y U+180E (invisibles) se aceptan como texto. zod y la BD coinciden.
 - (T-05a) `workspaces.name` sigue con `btrim`. Lo genera el trigger y no hay ninguna UI que lo edite.

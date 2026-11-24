@@ -15,9 +15,9 @@ grant update (sku, name, unit, min_stock, archived_at) on table public.products 
 -- Límites (D-04). Deben coincidir con productSchema (src/domain/schemas.ts).
 -- ---------------------------------------------------------------------------
 -- sku: solo ASCII, así que zod y Postgres validan exactamente lo mismo.
--- name/unit: zod .max() cuenta unidades UTF-16 y char_length() cuenta puntos de
--- código; un punto de código nunca ocupa menos de una unidad UTF-16, así que
--- zod es igual o más estricto: lo que zod acepta, Postgres lo acepta.
+-- name/unit: zod .max() y char_length() cuentan los dos puntos de código, así
+-- que los límites son idénticos: lo que zod acepta, Postgres lo acepta (lo fija
+-- schemas.test.ts).
 alter table public.products
   add constraint products_sku_format check (sku ~ '^[A-Z0-9._-]{1,32}$'),
   add constraint products_name_length check (char_length(name) <= 120),
