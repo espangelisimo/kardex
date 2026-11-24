@@ -240,6 +240,28 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
   - Diagnóstico de las tres rondas: el fallo de fondo era que la BD y JS definían de forma distinta qué es un espacio en blanco. La solución que converge es una sola definición explícita y probada de forma exhaustiva, no ir tapando caracteres uno a uno.
   - Los reintentos con la misma clave y una nota `''` o `null` dan `idempotency_conflict` por RPC. La acción no puede provocarlo, porque zod convierte `''` en `null`.
 
+### T-05b · ronda 1 · PASS
+- Develop:
+  - La ficha muestra el stock actual en es-ES y genera el `requestId` con `crypto.randomUUID()` cada vez que se pinta.
+  - `MovementForm` es un componente cliente con un select de tipo controlado y la nota con `required` dinámico en los ajustes. Solo aparece si el producto no está archivado.
+  - Historial en tarjetas, ordenado por `created_at desc, id desc`.
+  - `src/domain/format.ts`: etiquetas de tipo y cantidad con signo (U+2212).
+  - `saveProduct` redirige a la ficha, y el listado dice "No hay productos activos" cuando solo quedan archivados.
+- Testing: todo OK.
+  - `verify` da 128 tests con el dominio al 100 %, y `test:db` 138 PASS.
+  - Prueba HTTP real contra `next start` con dos sesiones:
+    - entrada, salida y ajuste con redirect a la ficha;
+    - "Stock insuficiente: hay 1500" en el campo de cantidad, sin crear nada;
+    - un ajuste sin nota o con nota en blanco da el error en el campo de la nota;
+    - el mismo POST dos veces y 6 POST en paralelo con la misma clave dejan 1 movimiento, y cada ficha que se pinta trae una clave distinta;
+    - los acumulados cuadran y la nota se escapa;
+    - un producto archivado no muestra el formulario, y un POST forzado da el error traducido;
+    - B no puede tocar productos de A.
+- Decisión: commit `feat(T-05b)`. Notas:
+  - Comprobar en Chrome que el select sigue en "Ajuste" después de un error, porque React 19 hace `form.reset()`.
+  - Zona horaria: el historial se formatea en el servidor, y en Vercel (UTC) saldría desfasado. Decisión del Orquestador: formatear con `timeZone: "Europe/Madrid"` con una función compartida del dominio. Se hace en T-06, porque el panel también muestra movimientos.
+  - Deuda: el `useState` inicial de `movement-form.tsx` no tiene efecto (C-06 ⚪), y los errores de campo no se anuncian con `role="alert"`, aunque sí están enlazados con `aria-describedby`.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".

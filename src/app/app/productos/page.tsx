@@ -27,6 +27,17 @@ export default async function ProductsPage({
     );
   }
 
+  // Solo si el listado activo está vacío: ¿hay archivados que mostrar?
+  let archivedCount = 0;
+  if (products.length === 0 && !showArchived) {
+    const { count, error: countError } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .not("archived_at", "is", null);
+    if (countError) console.error("Listado de productos: recuento de archivados falló:", countError.code);
+    archivedCount = count ?? 0;
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -46,6 +57,13 @@ export default async function ProductsPage({
           <p className="rounded border border-dashed border-black/30 p-6 text-center dark:border-white/40">
             No hay productos archivados.
           </p>
+        ) : archivedCount > 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded border border-dashed border-black/30 p-6 text-center dark:border-white/40">
+            <p>No hay productos activos</p>
+            <Link href="/app/productos?archivados=1" className={linkClass}>
+              Ver archivados
+            </Link>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-3 rounded border border-dashed border-black/30 p-6 text-center dark:border-white/40">
             <p>Aún no tienes productos</p>

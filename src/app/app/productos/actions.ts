@@ -67,6 +67,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { ok: false, fieldErrors, values };
   }
 
+  let savedId: string;
   if (id !== undefined) {
     // La RLS (S-03) es el control: un id ajeno no es visible y no afecta a ninguna fila.
     const { data, error } = await supabase.from("products").update(parsed.data).eq("id", id).select("id");
@@ -77,6 +78,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     if (data.length === 0) {
       return { ok: false, error: "El producto no existe o no tienes acceso a él.", values };
     }
+    savedId = id;
   } else {
     // v1: un usuario pertenece a un solo workspace (lo crea el trigger de alta).
     const { data: member, error: memberError } = await supabase
@@ -89,15 +91,21 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
       console.error("saveProduct (workspace) falló:", memberError?.code);
       return { ok: false, error: GENERIC_ERROR, values };
     }
-    const { error } = await supabase.from("products").insert({ ...parsed.data, workspace_id: member.workspace_id });
+    const { data: created, error } = await supabase
+      .from("products")
+      .insert({ ...parsed.data, workspace_id: member.workspace_id })
+      .select("id")
+      .single();
     if (error) {
       console.error("saveProduct (insert) falló:", error.code);
       return { ok: false, ...translateProductError(error), values };
     }
+    savedId = created.id;
   }
 
   revalidatePath(PRODUCTS_PATH);
-  redirect(PRODUCTS_PATH);
+  // A la ficha, no al listado: un producto archivado editado no desaparece de la vista.
+  redirect(`${PRODUCTS_PATH}/${savedId}`);
 }
 
 /** Archiva (archived = "true") o desarchiva ("false") un producto. Nunca se borran (AC-04.3). */
