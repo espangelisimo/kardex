@@ -58,3 +58,13 @@ npx supabase start             # Postgres + Auth locales (requiere Docker)
 npm run dev
 npm run verify && npm run test:db
 ```
+
+## Datos de ejemplo
+
+`supabase/seed.sql` carga una ferretería pequeña (8 productos, uno archivado, unos 30 movimientos) en el
+workspace de `demo@kardex.test`. No crea el usuario y la contraseña no está en el repo a propósito.
+Es idempotente: si el usuario no existe o su workspace ya tiene productos, no hace nada.
+
+- **Local:** registra `demo@kardex.test` en `/login` y ejecuta `npm run db:seed` (requiere `npx supabase start`).
+  `npx supabase db reset` también lo ejecuta, pero sin usuario solo muestra un aviso.
+- **Remoto:** crea el usuario en Supabase → Authentication y pega `seed.sql` en el SQL Editor.

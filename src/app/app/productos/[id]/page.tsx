@@ -2,12 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { formatSignedQuantity, MOVEMENT_KIND_LABEL } from "@/domain/format";
+import { formatDateTime, formatSignedQuantity, MOVEMENT_KIND_LABEL } from "@/domain/format";
 import { ArchiveForm, ProductForm } from "../product-form";
 import { MovementForm } from "./movement-form";
 
 const numberFormat = new Intl.NumberFormat("es-ES");
-const dateFormat = new Intl.DateTimeFormat("es-ES", { dateStyle: "short", timeStyle: "short" });
 
 export default async function ProductPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
@@ -105,7 +104,7 @@ export default async function ProductPage({ params }: Readonly<{ params: Promise
                     {MOVEMENT_KIND_LABEL[m.kind]} {formatSignedQuantity(m.quantity)} {product.unit}
                   </span>
                   <time dateTime={m.created_at} className="text-sm opacity-70">
-                    {dateFormat.format(new Date(m.created_at))}
+                    {formatDateTime(m.created_at)}
                   </time>
                 </div>
                 <div className="text-sm">Stock acumulado: {numberFormat.format(m.running_stock ?? 0)}</div>

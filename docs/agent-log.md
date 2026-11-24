@@ -296,6 +296,28 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - La zona horaria `Europe/Madrid` va en una función de formato compartida en `src/domain/`, que usan la ficha y el panel.
 - T-06 no se parte: son unos 7 archivos.
 
+### T-06 · ronda 1 · PASS
+- Develop:
+  - Panel `/app` con tarjetas de productos activos y stock bajo (`isLowStock`) y los últimos 10 movimientos de `movement_history`. Los nombres se cargan con una segunda consulta `in(ids)`, así que no hay N+1.
+  - `formatDateTime` con Europe/Madrid, que usan la ficha y el panel.
+  - `seed.sql`: 8 productos (1 archivado) y 33 movimientos, con comprobación final de que ningún acumulado queda negativo.
+  - `npm run db:seed` con `docker exec … psql -v ON_ERROR_STOP=1`.
+  - Sección del README sobre los datos de ejemplo.
+- Testing: todo OK.
+  - `verify` da 131 tests y `test:db` 138 PASS.
+  - Seed de verdad:
+    - Sin usuario, solo saca un notice.
+    - La primera vez carga los datos y la segunda no hace nada.
+    - Recuentos: 8 productos, 33 movimientos, 0 ajustes sin nota, 0 acumulados negativos, 0 empates y ninguna fecha futura.
+    - Con una copia rota a propósito salta el `raise exception`, psql termina con código 3 y no queda nada a medias.
+    - Ningún secreto en el seed ni en el README.
+  - Panel con sesión real: 7 activos y 3 con stock bajo (el archivado no cuenta). Los 10 movimientos coinciden con SQL, convertidos a la hora de Madrid. El usuario B ve los estados vacíos y recibe 404 en las fichas del demo.
+- Decisión: commit `feat(T-06)`. Deuda:
+  - Los tests de `formatDateTime` solo detectan un `timeZone` borrado si la máquina no está en Europe/Madrid. CI (UTC) sí lo detecta. Mejora futura: fijar `TZ=UTC` en Vitest.
+  - Las tarjetas del panel no tienen `focus-visible` propio; tienen el contorno del navegador.
+  - Con solo archivados, el panel dice "Aún no tienes productos".
+  - La tarjeta de stock bajo enlaza al listado sin filtrar.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".

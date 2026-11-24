@@ -13,6 +13,7 @@
     "test:db": "supabase test db",
     "check:secrets": "node scripts/check-secrets.mjs",
     "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:hooks && npm run check:secrets && npm run build",
+    "db:seed": "docker exec -i supabase_db_kardex psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/seed.sql",
     "db:types": "supabase gen types typescript --local > src/lib/database.types.ts",
     "test:hooks": "node scripts/test-guard.mjs"
   },

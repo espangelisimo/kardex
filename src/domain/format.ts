@@ -15,3 +15,16 @@ export function formatSignedQuantity(quantity: number): string {
   if (quantity < 0) return `−${numberFormat.format(Math.abs(quantity))}`;
   return numberFormat.format(0);
 }
+
+// Siempre en hora de Madrid: el servidor (UTC en Vercel) y el navegador no deben
+// mostrar fechas distintas para el mismo movimiento.
+const dateTimeFormat = new Intl.DateTimeFormat("es-ES", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "Europe/Madrid",
+});
+
+/** Fecha y hora corta en es-ES y zona Europe/Madrid, a partir de un ISO 8601. */
+export function formatDateTime(iso: string): string {
+  return dateTimeFormat.format(new Date(iso));
+}
