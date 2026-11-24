@@ -54,8 +54,8 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 - AC-02.3 Tests unitarios con casos límite (T-01).
 
 ### T-03 · Autenticación
-- AC-03.1 Clientes Supabase de servidor y navegador con `@supabase/ssr`, y middleware que refresca la sesión.
-- AC-03.2 `/login` con email y contraseña; errores en español.
+- AC-03.1 Cliente Supabase de servidor con `@supabase/ssr` y middleware que refresca la sesión.
+- AC-03.2 `/login` con email y contraseña para entrar y para crear cuenta (registro abierto, sin confirmación por email); errores en español.
 - AC-03.3 Las rutas de `/app/*` redirigen a `/login` sin sesión (comprobado con `getUser()`, S-07).
 - AC-03.4 Cerrar sesión.
 
@@ -64,7 +64,7 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 - AC-04.2 Crear y editar producto (SKU duplicado → error en el campo, no un 500).
 - AC-04.3 Los productos nunca se borran: siempre se archivan, tengan o no movimientos. Un producto archivado se puede editar y desarchivar; `register_movement` ya rechaza movimientos sobre él.
 - AC-04.4 Estado vacío con llamada a la acción.
-- AC-04.5 Migración nueva: `authenticated` solo puede actualizar las columnas editables de `products` (`sku`, `name`, `unit`, `min_stock`, `archived_at`); `id`, `workspace_id` y `created_at` son inmutables. Además, `check` en `products.sku` con la misma normalización que AC-02.2 (mayúsculas, sin espacios). Tests pgTAP que lo demuestren.
+- AC-04.5 Migración nueva: `authenticated` solo puede actualizar las columnas editables de `products` (`sku`, `name`, `unit`, `min_stock`, `archived_at`); `id`, `workspace_id` y `created_at` son inmutables. Además, el SKU solo admite `[A-Z0-9._-]` (letras ASCII; se valida tras quitar espacios y pasar a mayúsculas), en zod y como `check` en `products.sku`, y `products.name` tiene un máximo de 120 caracteres también en la base de datos. Tests pgTAP que lo demuestren.
 
 ### T-05 · Movimientos e historial
 - AC-05.1 Registrar entrada, salida o ajuste desde la ficha del producto, con nota obligatoria en los ajustes.

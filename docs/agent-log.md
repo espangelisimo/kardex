@@ -52,3 +52,13 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
     - `toUpperCase()` convierte `ß` en `SS`, y `upper()` de Postgres no.
   - `products.name` está limitado a 120 caracteres en zod, pero no en Postgres. Hay que decidirlo en T-04.
   - `note_required` llega desde Postgres como 23514 (check), no como un mensaje del error. La Server Action de T-05 tendrá que traducirlo.
+
+### Decisiones del humano antes de T-03
+- T-04:
+  - SKU solo con letras ASCII, números, guion, guion bajo y punto (`[A-Z0-9._-]`), tanto en zod como en un `check` de Postgres.
+  - `products.name` limitado a 120 caracteres también en la base de datos.
+  - Motivo: una regla sencilla e idéntica en los dos sitios. Así se evitan las diferencias de normalización entre JS y Postgres que detectó Testing en T-02.
+- T-03:
+  - Registro abierto y sin confirmación por email, "lo más sencillo posible". AC-03.2 se amplía para incluir el alta.
+  - AC-03.1 deja fuera el cliente de navegador: con Server Actions no se usa y sería código muerto (C-06).
+- El Orquestador parte T-03 en T-03a (sesión, middleware, `/app` protegido, cerrar sesión) y T-03b (login y registro), porque entre las dos superan los ~8 archivos.
