@@ -32,3 +32,23 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - AC-04.3 cambia: los productos nunca se borran, se archivan siempre, tengan o no movimientos. Motivo del humano: no perder historial y no tener dos formas distintas de quitar un producto. El esquema de T-01 ya es coherente con esto: `products` no tiene grant ni política de `delete`.
 - Productos archivados: el humano acepta que se puedan editar y desarchivar, porque `register_movement` ya bloquea los movimientos y el historial no corre peligro. Se recoge en AC-04.3.
 - Nuevo AC-04.5: `update` de `products` limitado por columnas (`id`, `workspace_id` y `created_at` inmutables), con una migración nueva porque T-01 está cerrada y un test pgTAP.
+
+### T-02 · ronda 1 · PASS
+- Decisiones del humano antes de delegar (ya recogidas en AC-02.2 y AC-04.5):
+  - El SKU se guarda sin ningún espacio y en mayúsculas. T-04 añadirá además un `check` en Postgres con la misma regla.
+  - En `in`/`out` la cantidad se introduce en positivo y el esquema le pone el signo; `adjust` admite cualquier entero salvo 0.
+  - `verify` pasa a ejecutar `test:coverage` para que CI también exija el 90 % de cobertura.
+- Develop:
+  - `src/domain/` con `types.ts`, `stock.ts` y `schemas.ts`. Las funciones de `stock.ts` son puras: devuelven un resultado `{ok…}` en lugar de lanzar excepciones, y usan los mismos códigos de error que Postgres. `quantity_out_of_range` es un código propio del dominio para decimales y valores fuera de rango.
+  - 76 tests, entre ellos un `expectTypeOf` que hace fallar `typecheck` si `MovementKind` deja de coincidir con `database.types.ts`.
+  - `verify` ejecuta `test:coverage`, y eslint ignora `coverage/**`.
+- Testing: todo OK.
+  - `verify` termina con exit 0, con cobertura del 100 % en líneas y ramas. Forzando el umbral a 101 la ejecución falla con exit 1, así que el control de cobertura funciona. `vitest.config.mts` no ha cambiado.
+  - Intentó romper las validaciones con espacios Unicode, `"1e3"`, `"0x10"`, `-0` e INT_MIN/INT_MAX, y no encontró ninguna entrada que el dominio acepte y Postgres rechace.
+- Decisión: commit `feat(T-02)`. Notas que pasan a T-04 y T-05:
+  - El `check` de SKU de AC-04.5 tiene que aceptar todo lo que genera zod. Hay diferencias entre las dos normalizaciones:
+    - `\s` de JS no elimina U+200B.
+    - Las clases de espacio de Postgres no coinciden con las de JS.
+    - `toUpperCase()` convierte `ß` en `SS`, y `upper()` de Postgres no.
+  - `products.name` está limitado a 120 caracteres en zod, pero no en Postgres. Hay que decidirlo en T-04.
+  - `note_required` llega desde Postgres como 23514 (check), no como un mensaje del error. La Server Action de T-05 tendrá que traducirlo.

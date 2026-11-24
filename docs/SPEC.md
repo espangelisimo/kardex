@@ -50,7 +50,7 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 
 ### T-02 · Dominio puro
 - AC-02.1 `src/domain/stock.ts`: aplicar movimientos, detectar stock bajo y validar el signo según el tipo.
-- AC-02.2 Esquemas zod en `src/domain/schemas.ts` para producto y movimiento (SKU normalizado en mayúsculas y sin espacios).
+- AC-02.2 Esquemas zod en `src/domain/schemas.ts` para producto y movimiento (SKU normalizado en mayúsculas y sin ningún espacio: `" ab c1 "` → `"ABC1"`). En `in`/`out` la cantidad llega en positivo y el esquema le aplica el signo; en `adjust` admite cualquier entero salvo 0.
 - AC-02.3 Tests unitarios con casos límite (T-01).
 
 ### T-03 · Autenticación
@@ -64,7 +64,7 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 - AC-04.2 Crear y editar producto (SKU duplicado → error en el campo, no un 500).
 - AC-04.3 Los productos nunca se borran: siempre se archivan, tengan o no movimientos. Un producto archivado se puede editar y desarchivar; `register_movement` ya rechaza movimientos sobre él.
 - AC-04.4 Estado vacío con llamada a la acción.
-- AC-04.5 Migración nueva: `authenticated` solo puede actualizar las columnas editables de `products` (`sku`, `name`, `unit`, `min_stock`, `archived_at`); `id`, `workspace_id` y `created_at` son inmutables. Test pgTAP que lo demuestre.
+- AC-04.5 Migración nueva: `authenticated` solo puede actualizar las columnas editables de `products` (`sku`, `name`, `unit`, `min_stock`, `archived_at`); `id`, `workspace_id` y `created_at` son inmutables. Además, `check` en `products.sku` con la misma normalización que AC-02.2 (mayúsculas, sin espacios). Tests pgTAP que lo demuestren.
 
 ### T-05 · Movimientos e historial
 - AC-05.1 Registrar entrada, salida o ajuste desde la ficha del producto, con nota obligatoria en los ajustes.
