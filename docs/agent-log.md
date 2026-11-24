@@ -26,3 +26,9 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
   - Un producto archivado se puede editar (decidir en T-04).
   - `p_kind` null devuelve 23502 y no el error propio.
   - Los default privileges siguen concediendo DELETE, REFERENCES y TRIGGER: cada tabla nueva debe repetir el patrón revoke/grant.
+
+### Cambios del humano tras T-01
+- D-05 reformulada (aprobada por el humano): "Nunca se edita una migración ya aplicada o publicada (incluida en un commit enviado al remoto o aplicada con `db push`); hasta entonces puede corregirse en el mismo archivo."
+- AC-04.3 cambia: los productos nunca se borran, se archivan siempre, tengan o no movimientos. Motivo del humano: no perder historial y no tener dos formas distintas de quitar un producto. El esquema de T-01 ya es coherente con esto: `products` no tiene grant ni política de `delete`.
+- Productos archivados: el humano acepta que se puedan editar y desarchivar, porque `register_movement` ya bloquea los movimientos y el historial no corre peligro. Se recoge en AC-04.3.
+- Nuevo AC-04.5: `update` de `products` limitado por columnas (`id`, `workspace_id` y `created_at` inmutables), con una migración nueva porque T-01 está cerrada y un test pgTAP.

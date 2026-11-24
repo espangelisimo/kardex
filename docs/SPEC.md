@@ -62,8 +62,9 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 ### T-04 · Productos
 - AC-04.1 Listado con stock actual, unidad y aviso visual si `stock ≤ min_stock`.
 - AC-04.2 Crear y editar producto (SKU duplicado → error en el campo, no un 500).
-- AC-04.3 Archivar en lugar de borrar si tiene movimientos.
+- AC-04.3 Los productos nunca se borran: siempre se archivan, tengan o no movimientos. Un producto archivado se puede editar y desarchivar; `register_movement` ya rechaza movimientos sobre él.
 - AC-04.4 Estado vacío con llamada a la acción.
+- AC-04.5 Migración nueva: `authenticated` solo puede actualizar las columnas editables de `products` (`sku`, `name`, `unit`, `min_stock`, `archived_at`); `id`, `workspace_id` y `created_at` son inmutables. Test pgTAP que lo demuestre.
 
 ### T-05 · Movimientos e historial
 - AC-05.1 Registrar entrada, salida o ajuste desde la ficha del producto, con nota obligatoria en los ajustes.

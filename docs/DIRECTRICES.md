@@ -27,7 +27,7 @@ escrita de Develop aceptada por el Orquestador) · ⚪ recomendación (va a `NOT
 | D-02 | Los movimientos son inmutables: sin políticas de `update` ni `delete`. Un error se corrige con un movimiento de ajuste. | 🔴 |
 | D-03 | El stock nunca puede quedar negativo, y eso lo garantiza Postgres en una transacción con bloqueo de fila (`select … for update`), no una comprobación previa en TypeScript (condición de carrera). | 🔴 |
 | D-04 | Las restricciones de dominio están en el esquema: `check`, `not null`, `unique (workspace_id, sku)`, claves foráneas con `on delete` explícito. | 🔴 |
-| D-05 | Cambios de esquema solo con migraciones nuevas en `supabase/migrations/`. Nunca se edita una migración existente. | 🔴 |
+| D-05 | Cambios de esquema solo con migraciones nuevas en `supabase/migrations/`. Nunca se edita una migración ya aplicada o publicada (incluida en un commit enviado al remoto o aplicada con `db push`); hasta entonces puede corregirse en el mismo archivo. | 🔴 |
 | D-06 | Los tipos de la base de datos usados en TS están en `src/lib/database.types.ts` y coinciden con las migraciones. | 🟡 |
 
 ## C — Código
