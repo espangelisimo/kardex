@@ -102,6 +102,12 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - El aviso de hidratación en desarrollo lo causan atributos `bis_*` que inyecta una extensión del navegador, no la app.
 - T-03 queda cerrada.
 
+### Decisiones del humano antes de T-04
+- T-04 se parte en T-04a (BD, dominio y Server Actions) y T-04b (UI), porque entre las dos superan los ~8 archivos.
+- Grants por columna también en `insert` (`workspace_id, sku, name, unit, min_stock`): al crear, el cliente no puede fijar `id`, `created_at` ni `archived_at`. Amplía AC-04.5.
+- Límites idénticos en zod y en un `check`: SKU `^[A-Z0-9._-]{1,32}$`, `name` ≤ 120 y `unit` ≤ 20. El humano fijó el máximo de 32 del SKU en T-02, pero no se había escrito; queda recogido ahora en AC-04.5.
+- Los archivados se ocultan en el listado por defecto; `?archivados=1` los muestra, y funciona sin JS.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".

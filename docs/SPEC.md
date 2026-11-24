@@ -64,7 +64,13 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 - AC-04.2 Crear y editar producto (SKU duplicado → error en el campo, no un 500).
 - AC-04.3 Los productos nunca se borran: siempre se archivan, tengan o no movimientos. Un producto archivado se puede editar y desarchivar; `register_movement` ya rechaza movimientos sobre él.
 - AC-04.4 Estado vacío con llamada a la acción.
-- AC-04.5 Migración nueva: `authenticated` solo puede actualizar las columnas editables de `products` (`sku`, `name`, `unit`, `min_stock`, `archived_at`); `id`, `workspace_id` y `created_at` son inmutables. Además, el SKU solo admite `[A-Z0-9._-]` (letras ASCII; se valida tras quitar espacios y pasar a mayúsculas), en zod y como `check` en `products.sku`, y `products.name` tiene un máximo de 120 caracteres también en la base de datos. Tests pgTAP que lo demuestren.
+- AC-04.5 Migración nueva con grants por columna en `products`: `authenticated` solo puede insertar `workspace_id`, `sku`, `name`, `unit` y `min_stock`, y solo puede actualizar `sku`, `name`, `unit`, `min_stock` y `archived_at`. Así `id`, `workspace_id` y `created_at` son inmutables, y al crear no se pueden fijar `id`, `created_at` ni `archived_at`. Límites idénticos en zod y como `check` en Postgres:
+  - SKU `^[A-Z0-9._-]{1,32}$` (letras ASCII; se valida tras quitar espacios y pasar a mayúsculas);
+  - `name` de 120 caracteres como máximo;
+  - `unit` de 20 caracteres como máximo.
+
+  Tests pgTAP que lo demuestren.
+- Partida en T-04a (migración, pgTAP, zod, traducción de errores y Server Actions) y T-04b (UI: listado, crear/editar, archivar, estado vacío). Los archivados se ocultan en el listado por defecto; `?archivados=1` los muestra.
 
 ### T-05 · Movimientos e historial
 - AC-05.1 Registrar entrada, salida o ajuste desde la ficha del producto, con nota obligatoria en los ajustes.
