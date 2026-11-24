@@ -318,6 +318,12 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
   - Con solo archivados, el panel dice "Aún no tienes productos".
   - La tarjeta de stock bajo enlaza al listado sin filtrar.
 
+### T-06 · prueba E2E en Chrome (Orquestador) · OK
+- Entrada como `demo@kardex.test` con los datos del seed. El panel muestra 7 activos, 3 con stock bajo y 10 movimientos en hora de Madrid, con enlaces a las fichas.
+- Recorrido completo: desde el panel, ficha de TOR-M6 (2/10), entrada de 10, vuelta al panel. Resultado: stock bajo 2, y "Entrada +10 caja · 24/11/26, 16:47" sale el primero (la hora coincide con la de Madrid del navegador).
+- A 360 px, el panel no tiene scroll horizontal (`scrollWidth == clientWidth`).
+- T-06 queda cerrada. El plan de tareas de `docs/SPEC.md` está completo en local.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
