@@ -3,6 +3,7 @@ import { credentialsSchema, movementSchema, productSchema } from "./schemas";
 import { INT_MAX, INT_MIN } from "./types";
 
 const UUID = "123e4567-e89b-42d3-a456-426614174000";
+const REQUEST_ID = "9b2f1c3e-5a4d-4e6f-8a7b-0c1d2e3f4a5b";
 const validProduct = { sku: "abc1", name: "Tornillo", unit: "ud", min_stock: 0 };
 
 function issuePaths(result: { error?: { issues: { path: PropertyKey[] }[] } }): string[] {
@@ -72,7 +73,7 @@ describe("productSchema", () => {
 });
 
 describe("movementSchema", () => {
-  const base = { productId: UUID, note: undefined };
+  const base = { productId: UUID, requestId: REQUEST_ID, note: undefined };
 
   it("in: cantidad positiva se conserva", () => {
     expect(movementSchema.parse({ ...base, kind: "in", quantity: 5 })).toEqual({
@@ -80,6 +81,7 @@ describe("movementSchema", () => {
       kind: "in",
       quantity: 5,
       note: null,
+      requestId: REQUEST_ID,
     });
   });
   it("out: la cantidad llega en positivo y sale en negativo", () => {
@@ -119,11 +121,27 @@ describe("movementSchema", () => {
     expect(movementSchema.parse({ ...base, kind: "in", quantity: 1, note: "   " }).note).toBeNull();
     expect(movementSchema.parse({ ...base, kind: "in", quantity: 1, note: "compra" }).note).toBe("compra");
   });
+  it("la nota admite 500 caracteres y rechaza 501, con el error en note", () => {
+    expect(movementSchema.safeParse({ ...base, kind: "in", quantity: 1, note: "x".repeat(500) }).success).toBe(true);
+    expect(issuePaths(movementSchema.safeParse({ ...base, kind: "in", quantity: 1, note: "x".repeat(501) }))).toEqual([
+      "note",
+    ]);
+  });
   it("rechaza productId no uuid y tipo desconocido", () => {
     expect(issuePaths(movementSchema.safeParse({ ...base, productId: "no", kind: "in", quantity: 1 }))).toEqual([
       "productId",
     ]);
     expect(issuePaths(movementSchema.safeParse({ ...base, kind: "bogus", quantity: 1 }))).toEqual(["kind"]);
+  });
+  it("requestId es obligatorio y debe ser uuid, con el error en requestId", () => {
+    for (const requestId of [undefined, null, "", "no", 5]) {
+      expect(issuePaths(movementSchema.safeParse({ ...base, requestId, kind: "in", quantity: 1 }))).toEqual([
+        "requestId",
+      ]);
+    }
+  });
+  it("el requestId válido pasa tal cual al resultado", () => {
+    expect(movementSchema.parse({ ...base, kind: "out", quantity: 1 }).requestId).toBe(REQUEST_ID);
   });
   it("los mensajes están en español", () => {
     const result = movementSchema.safeParse({ ...base, kind: "in", quantity: 0 });

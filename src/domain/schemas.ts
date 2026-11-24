@@ -41,12 +41,15 @@ export type ProductData = z.output<typeof productSchema>;
 export const movementSchema = z
   .object({
     productId: z.uuid({ error: "Producto no válido" }),
+    // Clave de idempotencia (AC-05.4): la genera el servidor al pintar la ficha.
+    requestId: z.uuid({ error: "Solicitud no válida" }),
     kind: z.enum(MOVEMENT_KINDS, { error: "Tipo de movimiento no válido" }),
     // in/out: positivo (el esquema aplica el signo). adjust: cualquier entero salvo 0.
     quantity: integerInput,
     note: z
       .string()
       .trim()
+      .max(500, "La nota admite 500 caracteres como máximo")
       .nullish()
       .transform((value) => (value ? value : null)),
   })
@@ -67,6 +70,7 @@ export const movementSchema = z
     kind: data.kind,
     quantity: data.kind === "out" ? -data.quantity : data.quantity,
     note: data.note,
+    requestId: data.requestId,
   }));
 
 export type MovementInput = z.input<typeof movementSchema>;

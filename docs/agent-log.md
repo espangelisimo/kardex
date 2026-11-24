@@ -174,9 +174,78 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - Se aprovecha la nueva `register_movement` para cerrar la nota de T-01: `p_kind` null devuelve un error propio, no 23502.
 - T-05 se parte en T-05a (BD, errores y acción) y T-05b (UI), porque entre las dos superan los ~8 archivos.
 
+### T-05a · ronda 1 · FAIL
+- Develop:
+  - Migración `20260103000000_movements_idempotency_history.sql`:
+    - `request_id` con `unique (workspace_id, request_id)` y `created_by_email`.
+    - `register_movement` admite `p_request_id` y comprueba la idempotencia después del `for update`. Con `p_kind` null devuelve `invalid_kind`.
+    - Vista `movement_history` con `running_stock`.
+  - `movements.test.sql` con 36 tests.
+  - `requestId` en zod.
+  - `movement-errors.ts`.
+  - La acción `registerMovement` en `[id]/actions.ts`.
+- Testing:
+  - Lo que está bien:
+    - `verify` en verde con 117 tests, y `test:db` da 109 PASS.
+    - 25 RPC en paralelo con el mismo `request_id` crean 1 fila, sin ningún 23505.
+    - AC-05.2 de extremo a extremo: "Stock insuficiente: hay 1241" y no se crea nada.
+    - `running_stock` coincide con `product_stock`.
+    - No hay fuga entre workspaces por `request_id`.
+  - [D-04] 🔴 Ajuste "sin nota" aceptado por la BD:
+    - El check `stock_movements_adjust_requires_note` de T-01 usa `btrim(note)`, que solo quita espacios.
+    - Una nota `E'\t\n'` pasa el check por RPC directo, mientras que zod la rechaza.
+    - La regla de negocio depende, por tanto, del cliente.
+- Decisión: ronda 2.
+  - Se recrea el check en la migración nueva (sin commit) con una condición que rechace cualquier espacio en blanco, y se añade un test que primero falle (T-02).
+  - Notas que se incorporan porque son baratas y del mismo tipo:
+    - Los checks de `products.name` y `products.unit` de T-01 tienen el mismo defecto de `btrim`: un nombre `E'\t'` pasa la BD. Se corrigen en la misma migración.
+    - Idempotencia con una petición distinta: si se reutiliza la misma clave con otro producto, tipo o cantidad, `register_movement` devuelve en silencio el movimiento original. Debe lanzar `idempotency_conflict`, que se traduce a un mensaje propio.
+    - Nota de 500 caracteres como máximo, en zod y en un `check`: el historial es inmutable y no debe aceptar textos de megabytes.
+  - Decisión de formato (Orquestador): `Intl.NumberFormat('es-ES')` escribe 1234 y 12.345, porque CLDR y la RAE no agrupan las cifras de 4 dígitos. Se mantiene así en toda la app; no se fuerza `useGrouping: "always"`.
+
+### T-05a · ronda 2 · FAIL
+- Develop:
+  - Checks con `~ '[^[:space:]]'` para la nota (`NOT VALID`, el historial es inmutable) y para `products.name` y `products.unit`.
+  - `idempotency_conflict`.
+  - Nota de 500 caracteres como máximo.
+  - 9 tests nuevos que fallaban antes del arreglo (T-02).
+  - `verify` da 123, y `test:db` 122 PASS.
+- Testing:
+  - Comprobado: idempotencia en concurrencia (el reintento idéntico devuelve el original y el conflicto se traduce, sin ningún 23505 crudo), `NOT VALID` justificado y ningún test debilitado.
+  - [D-04] 🔴 `[:space:]` depende de la collation y no coincide con el `.trim()` de JS:
+    - U+FEFF no cuenta como blanco con ninguna collation, así que por RPC se acepta un ajuste con nota invisible, y también un `name` o un `unit` invisibles.
+    - NBSP, U+2007 y U+202F solo se rechazan con ICU (el local). Con libc o `C` pasan, así que la regla dependería de cómo esté creado el proyecto remoto.
+- Decisión: ronda 3.
+  - Para que converja, se exige una regla determinista y única: una función SQL `immutable` que use una clase de caracteres explícita, idéntica a la de `String.prototype.trim` (la que propone Testing). Los tres checks y la normalización previa la usan.
+  - Tests pgTAP con U+FEFF, U+00A0 y U+3000, y uno con `collate "C"`.
+  - Deuda aceptada:
+    - U+200B y U+180E son invisibles y pasan en zod y en la BD. Las dos reglas coinciden y ninguna directriz lo exige.
+    - `workspaces.name` sigue usando `btrim`. Lo genera el trigger de alta y no hay ninguna UI que lo edite.
+
+### T-05a · ronda 3 · PASS
+- Develop:
+  - Crea `public.has_visible_text(p text)` (`sql immutable`, `search_path=''`, sin `security definer`), con una clase explícita idéntica a la de `String.prototype.trim`, sin `[:space:]` ni `btrim`.
+  - La usan `stock_movements_adjust_requires_note` (con `coalesce`, para que una nota null no pase), `products_name_not_blank`, `products_unit_not_blank` y la normalización previa.
+  - Los tests nuevos con FEFF fallaban antes del arreglo.
+- Testing:
+  - Todo OK. Barrido de U+0001 a U+FFFF: `has_visible_text` rechaza exactamente los mismos caracteres que `.trim()`, con la collation por defecto (ICU) y con `"C"`.
+  - Ataques por RPC con JWT con combinaciones de espacios Unicode en la nota, el nombre y la unidad: todos rechazados.
+  - AC-05.1 a AC-05.4 OK, y ningún test debilitado.
+  - Nota importante: la clase estaba escrita con caracteres invisibles literales, mientras que el comentario hablaba de escapes `\uXXXX`.
+- Corrección previa al commit (no es una ronda nueva, porque no incumple ninguna directriz):
+  - La clase se reescribe con escapes ASCII. Lo he comprobado con `od -c` y no queda ningún byte no ASCII fuera de los comentarios.
+  - Se añade un test que recorre los 25 códigos de `trim`.
+  - Lo he ejecutado yo: `db reset`, `test:db` (Files=4, Tests=138, PASS) y `verify` con exit 0 (123 tests, sin secretos, build OK).
+- Decisión: commit `feat(T-05a)`.
+  - Diagnóstico de las tres rondas: el fallo de fondo era que la BD y JS definían de forma distinta qué es un espacio en blanco. La solución que converge es una sola definición explícita y probada de forma exhaustiva, no ir tapando caracteres uno a uno.
+  - Los reintentos con la misma clave y una nota `''` o `null` dan `idempotency_conflict` por RPC. La acción no puede provocarlo, porque zod convierte `''` en `null`.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
 - Ninguna de las dos bloquea: se corregirán en una ronda corta cuando el humano lo decida.
 - (T-04, decidida por el Orquestador en modo auto) El comentario de `20260102000000_products_hardening.sql:18-20` dice que zod cuenta en UTF-16. En realidad cuenta puntos de código, igual que `char_length`, así que los límites son idénticos, y lo fija `schemas.test.ts`. El hook impide editar la migración: lo corrige el humano a mano antes del primer push, o se deja.
 - (T-04) La fecha original de `archived_at` solo la conserva la Server Action, no la BD.
+- (T-05a) U+200B y U+180E (invisibles) se aceptan como texto. zod y la BD coinciden.
+- (T-05a) `workspaces.name` sigue con `btrim`. Lo genera el trigger y no hay ninguna UI que lo edite.
+- (T-05a) Los checks de `stock_movements` son `NOT VALID`, porque el historial es inmutable. Cuando se confirme que el remoto no tiene filas que los incumplan, se puede añadir `validate constraint` en una migración posterior.

@@ -15,6 +15,8 @@ const CHECKS: Record<string, { field: ProductField; message: string }> = {
     field: "sku",
     message: "El SKU solo admite letras A-Z, números, punto, guion y guion bajo (hasta 32 caracteres)",
   },
+  products_name_not_blank: { field: "name", message: "El nombre es obligatorio" },
+  products_unit_not_blank: { field: "unit", message: "La unidad es obligatoria" },
   products_name_length: { field: "name", message: "El nombre admite 120 caracteres como máximo" },
   products_unit_length: { field: "unit", message: "La unidad admite 20 caracteres como máximo" },
   products_min_stock_check: { field: "min_stock", message: "El stock mínimo no puede ser negativo" },

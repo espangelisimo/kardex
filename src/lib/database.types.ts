@@ -45,14 +45,14 @@ isOneToOne: false
                   ]
                 },"stock_movements": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"kind": Database["public"]['Enums']["movement_kind"],"note": string | null,"product_id": string,"quantity": number,"workspace_id": string
+                    "created_at": string,"created_by": string | null,"created_by_email": string | null,"id": string,"kind": Database["public"]['Enums']["movement_kind"],"note": string | null,"product_id": string,"quantity": number,"request_id": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind": Database["public"]['Enums']["movement_kind"],"note"?: string | null,"product_id": string,"quantity": number,"workspace_id": string
+                    "created_at"?: string,"created_by"?: string | null,"created_by_email"?: string | null,"id"?: string,"kind": Database["public"]['Enums']["movement_kind"],"note"?: string | null,"product_id": string,"quantity": number,"request_id"?: string | null,"workspace_id": string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["movement_kind"],"note"?: string | null,"product_id"?: string,"quantity"?: number,"workspace_id"?: string
+                    "created_at"?: string,"created_by"?: string | null,"created_by_email"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["movement_kind"],"note"?: string | null,"product_id"?: string,"quantity"?: number,"request_id"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -112,7 +112,33 @@ isOneToOne: false
                 }
           }
           Views: {
-            "product_stock": {
+            "movement_history": {
+                  Row: {
+                    "created_at": string,"created_by_email": string | null,"id": string,"kind": Database["public"]['Enums']["movement_kind"],"note": string | null,"product_id": string,"quantity": number,"running_stock": number | null,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "stock_movements_product_id_workspace_id_fkey"
+      columns: ["product_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "product_stock"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_movements_product_id_workspace_id_fkey"
+      columns: ["product_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_movements_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_stock": {
                   Row: {
                     "archived_at": string | null,"created_at": string,"id": string,"min_stock": number,"name": string,"sku": string,"stock": number | null,"unit": string,"workspace_id": string
                   }
@@ -129,18 +155,23 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "is_member":
+            "has_visible_text":
+{ Args: { "p": string }; Returns: boolean
+                           },
+"is_member":
 { Args: { "p_workspace_id": string }; Returns: boolean
                            },
 "register_movement":
-{ Args: { "p_kind": Database["public"]['Enums']["movement_kind"],"p_note"?: string,"p_product_id": string,"p_quantity": number }; Returns: {
+{ Args: { "p_kind": Database["public"]['Enums']["movement_kind"],"p_note"?: string,"p_product_id": string,"p_quantity": number,"p_request_id"?: string }; Returns: {
               "created_at": string,
 "created_by": string | null,
+"created_by_email": string | null,
 "id": string,
 "kind": Database["public"]['Enums']["movement_kind"],
 "note": string | null,
 "product_id": string,
 "quantity": number,
+"request_id": string | null,
 "workspace_id": string
             }
                           SetofOptions: {

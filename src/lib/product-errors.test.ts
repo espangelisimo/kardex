@@ -14,6 +14,8 @@ describe("translateProductError", () => {
   });
   it.each([
     ["products_sku_format", "sku"],
+    ["products_name_not_blank", "name"],
+    ["products_unit_not_blank", "unit"],
     ["products_name_length", "name"],
     ["products_unit_length", "unit"],
     ["products_min_stock_check", "min_stock"],
