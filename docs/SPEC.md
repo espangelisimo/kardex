@@ -86,3 +86,8 @@ Cada tarea es una unidad del bucle Develop ⇄ Testing (ver `CLAUDE.md`).
 ### T-06 · Panel
 - AC-06.1 `/app` muestra el número de productos, cuántos tienen stock bajo y los últimos 10 movimientos.
 - AC-06.2 Datos de ejemplo cargables con `supabase/seed.sql` para el usuario de prueba.
+- Diseño (Orquestador, modo auto):
+  - `seed.sql` no crea usuarios ni contiene contraseñas. Carga los datos de ejemplo en el workspace de `demo@kardex.test` si ese usuario existe, y no hace nada si no existe o si ya tiene productos.
+  - En local se ejecuta con `npm run db:seed` tras registrar el usuario en `/login`. En el remoto, el humano crea el usuario en el dashboard y ejecuta `seed.sql` en el SQL Editor.
+  - El panel cuenta solo los productos activos.
+  - Las fechas se formatean con `timeZone: "Europe/Madrid"`.

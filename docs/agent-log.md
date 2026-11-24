@@ -286,6 +286,16 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - Decisión: commit `fix(T-05b): ronda 2`. T-05 queda cerrada.
   - Deuda: la regresión del select no tiene test automático, porque no hay tests de componente ni E2E automatizados. La cubre la E2E manual.
 
+### Decisiones del Orquestador antes de T-06 (modo auto)
+- Seed sin contraseñas en el repo.
+  - Lo habitual en Supabase es crear el usuario en `seed.sql` con una contraseña. Si esa misma contraseña llegara al remoto, cualquiera que leyera el repo podría entrar en la cuenta de prueba que se entrega.
+  - Por eso `seed.sql` solo carga datos para `demo@kardex.test` si existe: es idempotente y no crea usuarios.
+  - El humano crea el usuario remoto en el dashboard, con una contraseña que solo conocen él y los evaluadores.
+- Los movimientos del seed se insertan como `postgres` con fechas repartidas en las últimas semanas. Como saltan `register_movement`, el propio seed comprueba al final que ningún acumulado queda negativo (D-03).
+- El panel cuenta solo productos activos. "Stock bajo" significa activo con `stock ≤ min_stock`, el mismo criterio que el listado.
+- La zona horaria `Europe/Madrid` va en una función de formato compartida en `src/domain/`, que usan la ficha y el panel.
+- T-06 no se parte: son unos 7 archivos.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
