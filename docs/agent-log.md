@@ -153,6 +153,16 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
     - Al guardar un producto archivado, la app vuelve al listado de activos, donde no aparece. Debe volver a la ficha.
     - Comprobar en la E2E una unidad de 20 caracteres anchos a 360 px.
 
+### T-04 · prueba E2E en Chrome (Orquestador) · OK
+- Con una cuenta nueva:
+  - Estado vacío con su CTA.
+  - Alta con el SKU `" tor 01 "`, que se guarda como `TOR01`. Lleva un nombre de 87 caracteres, la unidad `WWWWWWWWWWWWWWWWWWWW` (20 caracteres anchos) y mínimo 5, así que sale "Stock bajo · 0 WWWW…".
+  - Repetir el SKU `tor01` deja "Ya existe un producto con ese SKU" en `#sku-error`, con `aria-invalid="true"` y los valores conservados.
+- A 360 px (iframe), el listado y la ficha tienen `scrollWidth == clientWidth == 360`. El caso de la unidad ancha que señaló Testing no desborda.
+- Archivar muestra el aviso "Producto archivado…" y el botón "Desarchivar". El producto desaparece de los activos y aparece en `?archivados=1`. Al desarchivar vuelve. `/app/productos/no-uuid` responde 404.
+- Nota que paso a T-05b: si todos los productos están archivados, el listado de activos dice "Aún no tienes productos", lo que confunde. Debería decir que no hay productos activos y remitir a los archivados.
+- T-04 queda cerrada.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
