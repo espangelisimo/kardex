@@ -132,7 +132,30 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
     - El formulario debe enviar y rellenar siempre los cuatro campos, porque `saveProduct` sobrescribe con los valores por defecto.
   - Deuda aceptada: `database.types.ts` tipa `Insert` con `id`, `created_at` y `archived_at` opcionales porque el generador ignora los grants por columna. La BD lo rechaza con 42501.
 
+### T-04b · ronda 1 · PASS
+- Develop:
+  - `/app/productos`: tarjetas con el stock en formato `es-ES` y la unidad, la insignia de texto "Stock bajo", el filtro `?archivados=1` y estados vacío y de error.
+  - `/app/productos/nuevo` y `/app/productos/[id]`: si el id no es un uuid o no se encuentra, responde con `notFound()`. Incluye el aviso de archivado y archivar/desarchivar.
+  - `product-form.tsx` usa `useActionState` y envía siempre los 4 campos.
+  - Navegación en el layout.
+  - `setArchived` conserva la `archived_at` original y es idempotente.
+  - Test con 😀 en los límites de `name` y `unit`.
+- Testing: todo OK.
+  - `verify` en verde con 102 tests, y `test:db` da 73 PASS.
+  - Prueba HTTP real contra `next start` con dos usuarios: estados vacíos, alta con SKU normalizado, SKU duplicado en el campo al crear y al editar, stock bajo visible, 404 para un producto ajeno o un id que no es uuid, y archivar dos veces conservando la fecha. Editar y desarchivar archivados funciona, B no puede tocar nada de A y un DELETE da 403.
+- Decisión: commit `feat(T-04b)`.
+  - Se mantiene el bloqueo del hook: `guard.mjs` impide editar migraciones existentes, aunque D-05 lo permita mientras no estén publicadas. Develop no lo esquivó y el Orquestador tampoco lo hace. El comentario erróneo sobre UTF-16 pasa a deuda conocida.
+  - Deuda aceptada (opción más simple):
+    - Conservar `archived_at` es una regla de la Server Action, no de la BD (un PATCH directo puede reescribir la fecha). No afecta a la integridad: solo es la fecha de archivado. Tampoco tiene test automático: no hay infraestructura de tests de Server Actions y Testing lo comprobó por HTTP.
+    - `?archivados=1&archivados=1` muestra los activos.
+    - Los enlaces "← Productos" no llevan la clase `focus-visible` propia (sí el anillo del navegador).
+  - Notas que se resuelven en T-05, porque toca la ficha:
+    - Al guardar un producto archivado, la app vuelve al listado de activos, donde no aparece. Debe volver a la ficha.
+    - Comprobar en la E2E una unidad de 20 caracteres anchos a 360 px.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
 - Ninguna de las dos bloquea: se corregirán en una ronda corta cuando el humano lo decida.
+- (T-04, decidida por el Orquestador en modo auto) El comentario de `20260102000000_products_hardening.sql:18-20` dice que zod cuenta en UTF-16. En realidad cuenta puntos de código, igual que `char_length`, así que los límites son idénticos, y lo fija `schemas.test.ts`. El hook impide editar la migración: lo corrige el humano a mano antes del primer push, o se deja.
+- (T-04) La fecha original de `archived_at` solo la conserva la Server Action, no la BD.

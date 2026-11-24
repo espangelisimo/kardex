@@ -51,6 +51,12 @@ describe("productSchema", () => {
     expect(productSchema.parse({ ...validProduct, unit: "u".repeat(20) }).unit).toHaveLength(20);
     expect(issuePaths(productSchema.safeParse({ ...validProduct, unit: "u".repeat(21) }))).toEqual(["unit"]);
   });
+  it("name y unit cuentan puntos de código, como char_length() de Postgres (😀 cuenta 1)", () => {
+    expect(productSchema.safeParse({ ...validProduct, name: "😀".repeat(120) }).success).toBe(true);
+    expect(issuePaths(productSchema.safeParse({ ...validProduct, name: "😀".repeat(121) }))).toEqual(["name"]);
+    expect(productSchema.safeParse({ ...validProduct, unit: "😀".repeat(20) }).success).toBe(true);
+    expect(issuePaths(productSchema.safeParse({ ...validProduct, unit: "😀".repeat(21) }))).toEqual(["unit"]);
+  });
   it("min_stock: por defecto 0, acepta 0, enteros y strings numéricos del formulario", () => {
     expect(productSchema.parse({ sku: "a", name: "n" }).min_stock).toBe(0);
     expect(productSchema.parse({ ...validProduct, min_stock: 0 }).min_stock).toBe(0);

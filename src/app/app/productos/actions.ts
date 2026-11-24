@@ -113,17 +113,29 @@ export async function setArchived(_prev: ProductFormState, formData: FormData): 
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { ok: false, error: SESSION_ERROR };
 
-  const { data, error } = await supabase
+  const archiving = parsed.data.archived === "true";
+  // Al archivar solo se toca si sigue activo (`archived_at is null`): así se conserva
+  // la fecha original de un producto ya archivado.
+  let query = supabase
     .from("products")
-    .update({ archived_at: parsed.data.archived === "true" ? new Date().toISOString() : null })
-    .eq("id", parsed.data.id)
-    .select("id");
+    .update({ archived_at: archiving ? new Date().toISOString() : null })
+    .eq("id", parsed.data.id);
+  if (archiving) query = query.is("archived_at", null);
+  const { data, error } = await query.select("id");
   if (error) {
     console.error("setArchived falló:", error.code);
     return { ok: false, ...translateProductError(error) };
   }
   if (data.length === 0) {
-    return { ok: false, error: "El producto no existe o no tienes acceso a él." };
+    // Cero filas: o ya estaba archivado (éxito idempotente) o no existe / no es visible por RLS.
+    const { data: existing, error: existsError } = archiving
+      ? await supabase.from("products").select("id").eq("id", parsed.data.id).maybeSingle()
+      : { data: null, error: null };
+    if (existsError) {
+      console.error("setArchived (comprobación) falló:", existsError.code);
+      return { ok: false, ...translateProductError(existsError) };
+    }
+    if (!existing) return { ok: false, error: "El producto no existe o no tienes acceso a él." };
   }
 
   revalidatePath(PRODUCTS_PATH);
