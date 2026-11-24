@@ -333,3 +333,9 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
 - (T-05a) U+200B y U+180E (invisibles) se aceptan como texto. zod y la BD coinciden.
 - (T-05a) `workspaces.name` sigue con `btrim`. Lo genera el trigger y no hay ninguna UI que lo edite.
 - (T-05a) Los checks de `stock_movements` son `NOT VALID`, porque el historial es inmutable. Cuando se confirme que el remoto no tiene filas que los incumplan, se puede añadir `validate constraint` en una migración posterior.
+
+### Despliegue · GitHub y Supabase remoto (2026-11-24)
+- GitHub: repo público `espangelisimo/kardex`. La rama local `master` se renombra a `main` porque CI solo corre en `main`. Antes del push se comprobó que ningún archivo de entorno está versionado ni en el historial (solo `.env.example`, sin valores). CI en verde (run 45475687760). El humano acepta que el email del autor sea visible.
+- Supabase: el humano crea el proyecto (plan Free), lo enlaza y aplica las 3 migraciones (`db push --remote`; sin `--remote` el CLI apunta al stack local). Desactiva "Confirm email", crea `demo@kardex.test` con una contraseña que no está en el repo y ejecuta `seed.sql`: 8 productos y 33 movimientos.
+- Comprobación del Orquestador con la clave publishable y sin sesión: `products`, `stock_movements`, `workspaces`, `product_stock` y `movement_history` responden 42501. `anon` no tiene privilegios, así que no llega ningún dato.
+- D-05 rige desde aquí: las migraciones publicadas no se editan.
