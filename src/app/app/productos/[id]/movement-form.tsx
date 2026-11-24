@@ -20,7 +20,19 @@ function isKind(value: string | undefined): value is MovementKind {
 export function MovementForm({ productId, requestId }: Readonly<{ productId: string; requestId: string }>) {
   const [state, action, pending] = useActionState(registerMovement, INITIAL);
   const failed = state.ok ? undefined : state;
-  const [kind, setKind] = useState<MovementKind>(isKind(failed?.values?.kind) ? failed.values.kind : "in");
+  // El select no es controlado: React 19 hace form.reset() al acabar la acción y
+  // un select controlado perdería su valor en el DOM sin que React lo notara.
+  // Tras cada respuesta se fija el tipo desde el servidor (el enviado si falló,
+  // "in" si fue bien) y se remonta el select con `key` para que su DOM coincida.
+  const serverKind: MovementKind = isKind(failed?.values?.kind) ? failed.values.kind : "in";
+  const [seenState, setSeenState] = useState(state);
+  const [kind, setKind] = useState<MovementKind>(serverKind);
+  const [selectVersion, setSelectVersion] = useState(0);
+  if (seenState !== state) {
+    setSeenState(state);
+    setKind(serverKind);
+    setSelectVersion((v) => v + 1);
+  }
 
   const quantityError = failed?.fieldErrors?.quantity;
   const noteError = failed?.fieldErrors?.note;
@@ -38,7 +50,8 @@ export function MovementForm({ productId, requestId }: Readonly<{ productId: str
         <select
           id="kind"
           name="kind"
-          value={kind}
+          key={selectVersion}
+          defaultValue={kind}
           onChange={(e) => {
             if (isKind(e.target.value)) setKind(e.target.value);
           }}

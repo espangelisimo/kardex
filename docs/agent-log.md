@@ -262,6 +262,30 @@ Lo mantiene el Orquestador: una entrada por ronda (formato en `CLAUDE.md`).
   - Zona horaria: el historial se formatea en el servidor, y en Vercel (UTC) saldría desfasado. Decisión del Orquestador: formatear con `timeZone: "Europe/Madrid"` con una función compartida del dominio. Se hace en T-06, porque el panel también muestra movimientos.
   - Deuda: el `useState` inicial de `movement-form.tsx` no tiene efecto (C-06 ⚪), y los errores de campo no se anuncian con `role="alert"`, aunque sí están enlazados con `aria-describedby`.
 
+### T-05b · prueba E2E en Chrome (Orquestador) · FAIL → ronda 2
+- OK:
+  - Al crear un producto se vuelve a su ficha.
+  - Una entrada de 25 actualiza el stock y el historial (fecha es-ES, +25 ud, acumulado y autor), y la ficha se pinta con un `requestId` nuevo.
+  - Una salida de 100 muestra "Stock insuficiente: hay 25" junto a la cantidad, sin crear nada.
+- 🔴 Fallo (la nota 1 de Testing, confirmada):
+  - Después de cualquier error del servidor, el `<select>` de tipo vuelve a "Entrada" en el DOM (`kind=in`). React 19 hace `form.reset()` y el estado de React sigue con el tipo elegido.
+  - Lo he reproducido eligiendo "Ajuste" con el teclado: tras el error, la etiqueta dice "Nota (obligatoria en ajustes)", pero el select envía `in`.
+  - Si el usuario corrige la cantidad y reenvía, registra una **entrada** en lugar de una salida o un ajuste. Es un error de datos silencioso y la interfaz miente.
+  - Testing no lo podía ver por HTTP, por eso lo dejó como nota.
+- Incidencia del entorno, sin relación con la app: el `next build` de Testing pisó el `.next` del servidor de desarrollo, que empezó a dar `Cannot find module './vendor-chunks/@supabase.js'`. Lo resolví borrando `.next` y reiniciando. Desde ahora, Testing debe hacer el build en una copia o yo reinicio el servidor de desarrollo después.
+
+### T-05b · ronda 2 · PASS
+- Develop: en `movement-form.tsx`, el select pasa a no controlado (`defaultValue` + `key`). Tras cada respuesta, el tipo que se muestra, el que se envía y el que controla la ayuda se fijan en el mismo render al tipo enviado. Para eso usa el patrón de "estado visto" de React, sin `useEffect`.
+- Testing: todo OK.
+  - `verify` en verde con 128 tests.
+  - Revisado el patrón: no hay bucles ni warnings, y el tipo mostrado y el enviado no se separan en ningún caso: dos errores seguidos, cambiar de tipo con el envío en curso, un éxito seguido de un error, un tipo manipulado o el envío sin JS.
+- E2E del Orquestador en Chrome, antes de Testing: OK.
+  - Salida y ajuste elegidos con el teclado conservan el tipo tras un error. Al reenviar se registra el tipo correcto: Salida −10 y Ajuste −2 con su nota.
+  - El doble clic deja un solo movimiento.
+  - A 360 px no hay scroll horizontal en la ficha, el listado ni la página de nuevo producto.
+- Decisión: commit `fix(T-05b): ronda 2`. T-05 queda cerrada.
+  - Deuda: la regresión del select no tiene test automático, porque no hay tests de componente ni E2E automatizados. La cubre la E2E manual.
+
 ### Deuda conocida (aceptada por el humano, pendiente)
 - `credentialsSchema` acepta una contraseña formada solo por espacios (zod y GoTrue la admiten).
 - Si el email llega vacío (`""`) se muestra "Introduce un email válido" en lugar de "El email es obligatorio".
